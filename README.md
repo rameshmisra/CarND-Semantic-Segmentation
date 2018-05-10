@@ -1,6 +1,22 @@
 # Semantic Segmentation
 ### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+In this project, pixels of a road in images were labeled road (green) or not-road using a Fully Convolutional Network (FCN) that was based on a modified VGG16 model previously trained and provided.
+
+It is not clear to me if weights and biases of the VGG16 model were frozen (have not figured out how to check); commentary on the discussion board suggested it was not actually frozen. I could have used tf.get_collection() to freeze parameters of the lower layers of the model, but training time was quite reasonable on my system with a GTX 1080 GPU, so I did not pursue that. The size of the trained model did indeed balloon from about 500MB for the VGG16, to about 1.5GB for the complete FCN model.
+
+
+### FCN model architecture
+Identical to the model discussed in the paper on FCNs from UC Berkeley, three 1x1 convolution layers were added to the VGG16 model provided at the end of the third, fourth and final set of convolution layers. Three deconvolution/ upsampling layers followed, and there were two skipped connections added: from the 4th set of convolutional layers to the first deconvolution layer, and from the 3rd set of convolution layers to the 2nd deconvolution layers.
+
+### Parameters for training
+After some amount of experimentation, for the training stage I settled on a learning rate of 0.0002, keep probability of 0.75, batch size of 5 and trained the model for 10 epochs. The cross entropy loss declined fairly monotonically from 0.245 after the first epoch of training to 0.043. I could have run for a few more epochs, or further reduce batch size, to realize an even lower loss, but the resultant model appeared to do a reasonable job during inference. I did not yet implement code for validation loss for the training phase (but, given the fairly small training dataset, perhaps the statistic may have limited value).
+Note that I used Tensorflow 1.5.
+
+### Results
+The model saved using tf.train.Saver() is about 1.5GB large; during running of main.py, choosing to save the model could result in a crash due to memory error; there is an option to choose not save the model after training is completed, which should eliminate this issue. I have submitted all the images from the Inference stage, and they are placed in 3 folders. Processing all the 290 images can take some time, and again an option is offered in the code to not run inference and stop after saving the model.
+
+The model does a reasonable job in accurately labeling the road; in particular see um_000009.png, um_000032.png, um_000077.png, where the model has done a good job of differentiating the two sides of the road from the grassy median, curved road from bus, the road from the shoulder respectively. Cases where the model displays considerable room for improvement include um_000037.png, um_000037.png, among others, where incorrect parts of the image are labeled as road, or the boundaries between road/not-road are erroneous.
+
 
 ### Setup
 ##### Frameworks and Packages
@@ -23,24 +39,3 @@ python main.py
 ```
 **Note** If running this in Jupyter Notebook system messages, such as those regarding test status, may appear in the terminal rather than the notebook.
 
-### Submission
-1. Ensure you've passed all the unit tests.
-2. Ensure you pass all points on [the rubric](https://review.udacity.com/#!/rubrics/989/view).
-3. Submit the following in a zip file.
- - `helper.py`
- - `main.py`
- - `project_tests.py`
- - Newest inference images from `runs` folder  (**all images from the most recent run**)
- 
- ### Tips
-- The link for the frozen `VGG16` model is hardcoded into `helper.py`.  The model can be found [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip)
-- The model is not vanilla `VGG16`, but a fully convolutional version, which already contains the 1x1 convolutions to replace the fully connected layers. Please see this [forum post](https://discussions.udacity.com/t/here-is-some-advice-and-clarifications-about-the-semantic-segmentation-project/403100/8?u=subodh.malgonde) for more information.  A summary of additional points, follow. 
-- The original FCN-8s was trained in stages. The authors later uploaded a version that was trained all at once to their GitHub repo.  The version in the GitHub repo has one important difference: The outputs of pooling layers 3 and 4 are scaled before they are fed into the 1x1 convolutions.  As a result, some students have found that the model learns much better with the scaling layers included. The model may not converge substantially faster, but may reach a higher IoU and accuracy. 
-- When adding l2-regularization, setting a regularizer in the arguments of the `tf.layers` is not enough. Regularization loss terms must be manually added to your loss function. otherwise regularization is not implemented.
- 
-### Using GitHub and Creating Effective READMEs
-If you are unfamiliar with GitHub , Udacity has a brief [GitHub tutorial](http://blog.udacity.com/2015/06/a-beginners-git-github-tutorial.html) to get you started. Udacity also provides a more detailed free [course on git and GitHub](https://www.udacity.com/course/how-to-use-git-and-github--ud775).
-
-To learn about REAMDE files and Markdown, Udacity provides a free [course on READMEs](https://www.udacity.com/courses/ud777), as well. 
-
-GitHub also provides a [tutorial](https://guides.github.com/features/mastering-markdown/) about creating Markdown files.
